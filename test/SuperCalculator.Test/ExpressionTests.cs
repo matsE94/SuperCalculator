@@ -4,7 +4,7 @@ using Xunit;
 
 namespace SuperCalculator.Test
 {
-    [Trait("Category", "Unit")]
+    [Trait("Category", "Expression")]
     public class ExpressionTests
     {
         [Fact]

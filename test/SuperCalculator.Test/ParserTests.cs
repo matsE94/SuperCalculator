@@ -3,7 +3,7 @@ using Xunit;
 
 namespace SuperCalculator.Test
 {
-    [Trait("Category", "Unit")]
+    [Trait("Category", "EndToEnd")]
     public class ParserTests
     {
         [Theory]
