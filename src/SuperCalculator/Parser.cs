@@ -5,74 +5,67 @@ namespace SuperCalculator
 {
     public class Parser
     {
-        public IExpression Parse(string input)
+        public IExpression Parse(string expression)
         {
-            if (string.IsNullOrWhiteSpace(input)) throw new ArgumentNullException(nameof(input));
-            var trimmed = input.Trim();
+            if (string.IsNullOrWhiteSpace(expression)) throw new ArgumentNullException(nameof(expression));
+            expression = expression.Trim();
 
-            if (int.TryParse(trimmed, out var x)) return new ValueExpression(x);
+            if (int.TryParse(expression, out var x)) return new ValueExpression(x);
 
 
-            var hasEdgeParenthesis = Parenthesis.HasEdgeParenthesis(trimmed);
+            var hasEdgeParenthesis = Parenthesis.HasEdgeParenthesis(expression);
             if (hasEdgeParenthesis) // devide in to two expressions
             {
-                if (Parenthesis.HasWrappedParenthesis(trimmed))
+                if (Parenthesis.HasWrappedParenthesis(expression))
                 {
-                    trimmed = trimmed.Substring(1, trimmed.Length - 2);
-                    return Parse(trimmed);
+                    expression = expression.Substring(1, expression.Length - 2);
+                    return Parse(expression);
                 }
 
                 //((2+2)/2)*2
-                var (pString, lower, upper) = Parenthesis.Extract(trimmed);
+                var (pString, lower, upper) = Parenthesis.Extract(expression);
 
                 var rest = lower == 0
-                    ? trimmed[(upper)..]
-                    : trimmed[..(lower)];
+                    ? expression[upper..]
+                    : expression[..lower];
                 var otherExp = ParserUtils.RemoveEdgeOperator(rest);
-                var left = Parse(pString.Trim());
-                var right = Parse(otherExp.Trim());
-                var mod = OperatorHelper.FirstOperator(rest);
-
-                return new Expression(left, right, mod);
+                return new Expression(
+                    Parse(pString),
+                    Parse(otherExp),
+                    OperatorHelper.FirstOperator(rest));
             }
 
             // 1+1
-            //40(1+1)
-            //40(0-100)+1000
-
-            var isLeftContext = true;
-            var (@operator, indexOfOperator) = GetNextOperatorOrDefaultInContext(trimmed, isLeftContext);
+            // 40(1+1)
+            // 40(0-100)+1000
+            var (@operator, indexOfOperator) = GetNextOperatorOrDefaultInContext(expression);
 
             if (indexOfOperator == -1)
             {
-                var positionOfContextCloser = isLeftContext
-                    ? Parenthesis.IndexOfFirstRight(trimmed)
-                    : Parenthesis.IndexOfFirstLeft(trimmed);
+                var positionOfContextCloser = Parenthesis.IndexOfFirstRight(expression);
                 return new Expression(
-                    Parse(trimmed[..positionOfContextCloser]),
-                    Parse(trimmed[positionOfContextCloser..]),
+                    Parse(expression[..positionOfContextCloser]),
+                    Parse(expression[positionOfContextCloser..]),
                     @operator);
             }
 
             if (@operator is Operator.Mul or Operator.Div)
             {
-                var str = trimmed[(indexOfOperator + 1)..];
+                var nextContext = expression[(indexOfOperator + 1)..];
                 var prevIndex = indexOfOperator;
-                (@operator, indexOfOperator) = GetNextOperatorOrDefaultInContext(str, isLeftContext);
-                indexOfOperator += indexOfOperator == -1 ? (prevIndex + 1) : 2; //correct for length
+                (@operator, indexOfOperator) = GetNextOperatorOrDefaultInContext(nextContext);
+                indexOfOperator += indexOfOperator == -1 ? ++prevIndex : 2; //correct for length
             }
 
-            var l = trimmed[..(indexOfOperator)];
-            var r = trimmed[(indexOfOperator + 1)..];
             return new Expression(
-                Parse(l),
-                Parse(r),
+                Parse(expression[..indexOfOperator]),
+                Parse(expression[(indexOfOperator + 1)..]),
                 @operator);
         }
 
-        private (Operator, int) GetNextOperatorOrDefaultInContext(string str, bool isLeftContext)
+        private (Operator, int) GetNextOperatorOrDefaultInContext(string str)
         {
-            var closingBracket = isLeftContext ? ')' : '(';
+            var closingBracket = ')';
             var defaultValue = (Operator.Mul, -1);
             for (var i = 0; i < str.Length; i++)
             {
