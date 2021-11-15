@@ -7,6 +7,8 @@ namespace SuperCalculator.Test
     public class ParserTests
     {
         [Theory]
+        [InlineData("2+(-1)", 1)]
+        [InlineData("(-1)", -1)]
         [InlineData("2+2", 4)]
         [InlineData("8-2", 6)]
         [InlineData("2*2-1", 3)]
