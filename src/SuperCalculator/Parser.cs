@@ -23,16 +23,15 @@ namespace SuperCalculator
                 }
 
                 //((2+2)/2)*2
-                var (pString, lower, upper) = Parenthesis.Extract(expression);
-
+                var (extracted, lower, upper) = Parenthesis.Extract(expression);
                 var rest = lower == 0
                     ? expression[upper..]
                     : expression[..lower];
                 var otherExp = ParserUtils.RemoveEdgeOperator(rest);
                 return new Expression(
-                    Parse(pString),
+                    Parse(extracted),
                     Parse(otherExp),
-                    OperatorHelper.FirstOperator(rest));
+                    GetNextOperatorOrDefaultInContext(rest).Item1);
             }
 
             // 1+1
